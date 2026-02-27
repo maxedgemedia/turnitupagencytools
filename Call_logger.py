@@ -9,7 +9,7 @@ SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Calls"
 
 # ← Edit: add real agent names and passwords
-AGENTS = ["Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← replace with real names
+AGENTS = ["Demo Agent", "Manager"]
 SHARED_PASSWORD = "TurnItUp2026"
 
 
