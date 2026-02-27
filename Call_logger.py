@@ -7,7 +7,14 @@ import json
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Calls"
-AGENTS     = ["Select agent...", "Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← edit
+
+# ← Edit: add real agent names and passwords
+AGENT_PASSWORDS = {
+    "Agent 1":  "pass1",
+    "Agent 2":  "pass2",
+    "Agent 3":  "pass3",
+    "Manager":  "manager123",
+}
 
 CALL_TYPES = ["Inbound Lead", "Outbound Follow-Up", "Client Service", "Recruit Call"]
 OUTCOMES   = ["Appointment Set", "Callback Requested", "No Answer", "Not Interested", "Policy Sold"]
@@ -34,17 +41,36 @@ def load_calls(ws, agent):
 def save_call(ws, row):
     ws.append_row(row)
 
+# ── LOGIN ─────────────────────────────────────────────────────────────────────
+def login_screen():
+    st.title("📞 Call Logger")
+    st.subheader("Login")
+    name = st.selectbox("Your Name", ["Select..."] + list(AGENT_PASSWORDS.keys()))
+    password = st.text_input("Password", type="password")
+    if st.button("Login", use_container_width=True):
+        if name == "Select...":
+            st.error("Please select your name.")
+        elif AGENT_PASSWORDS.get(name) == password:
+            st.session_state.agent = name
+            st.rerun()
+        else:
+            st.error("Incorrect password. Try again.")
+
+if "agent" not in st.session_state:
+    login_screen()
+    st.stop()
+
+agent = st.session_state.agent
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Call Logger", page_icon="📞", layout="centered")
 st.title("📞 Call Logger")
-
-agent = st.selectbox("Who are you?", AGENTS)
-if agent == "Select agent...":
-    st.info("Please select your name to continue.")
-    st.stop()
+st.caption(f"Logged in as **{agent}**")
+if st.button("Logout", key="logout"):
+    del st.session_state.agent
+    st.rerun()
 
 ws = get_sheet()
-
 tab1, tab2 = st.tabs(["Log a Call", "My Call History"])
 
 # ── TAB 1: LOG ────────────────────────────────────────────────────────────────
