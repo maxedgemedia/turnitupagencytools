@@ -9,12 +9,10 @@ SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Calls"
 
 # ← Edit: add real agent names and passwords
-AGENT_PASSWORDS = {
-    "Agent 1":  "pass1",
-    "Agent 2":  "pass2",
-    "Agent 3":  "pass3",
-    "Manager":  "manager123",
-}
+AGENTS = ["Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← replace with real names
+SHARED_PASSWORD = "TurnItUp2026"
+
+
 
 CALL_TYPES = ["Inbound Lead", "Outbound Follow-Up", "Client Service", "Recruit Call"]
 OUTCOMES   = ["Appointment Set", "Callback Requested", "No Answer", "Not Interested", "Policy Sold"]
@@ -45,13 +43,13 @@ def save_call(ws, row):
 def login_screen():
     st.title("📞 Call Logger")
     st.subheader("Login")
-    name = st.selectbox("Your Name", ["Select..."] + list(AGENT_PASSWORDS.keys()))
+    username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login", use_container_width=True):
-        if name == "Select...":
-            st.error("Please select your name.")
-        elif AGENT_PASSWORDS.get(name) == password:
-            st.session_state.agent = name
+        if username not in AGENTS:
+            st.error("Username not recognized.")
+        elif password == SHARED_PASSWORD:
+            st.session_state.agent = username
             st.rerun()
         else:
             st.error("Incorrect password. Try again.")
