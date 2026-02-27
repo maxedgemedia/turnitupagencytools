@@ -7,7 +7,13 @@ import json
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Referrals"
-AGENTS     = ["Select agent...", "Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← edit
+
+AGENT_PASSWORDS = {
+    "Agent 1":  "pass1",
+    "Agent 2":  "pass2",
+    "Agent 3":  "pass3",
+    "Manager":  "manager123",
+}
 
 REFERRAL_STAGES = ["Requested", "Received", "Contacted", "Appointment Set", "Policy Issued", "Closed Lost"]
 
@@ -31,7 +37,6 @@ I'll be reaching out to them shortly and will make sure they're well taken care 
 Thank you so much for the introduction. Your referral made a real difference for their family. I'm truly grateful to have clients like you!""",
 }
 
-# ── GOOGLE SHEETS ─────────────────────────────────────────────────────────────
 def get_sheet():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_info(
@@ -44,29 +49,46 @@ def get_sheet():
         ws = sh.add_worksheet(TAB_NAME, rows=1000, cols=12)
         ws.append_row(["Timestamp", "Agent", "Client Name", "Client Phone",
                        "Referral Name", "Referral Phone", "Stage",
-                       "Request Date", "Follow Up Date", "Converted",
-                       "Notes", "Template Used"])
+                       "Request Date", "Follow Up Date", "Converted", "Notes", "Template Used"])
     return ws
 
 def load_referrals(ws, agent, is_manager):
     rows = ws.get_all_records()
     return rows if is_manager else [r for r in rows if r.get("Agent") == agent]
 
+# ── LOGIN ─────────────────────────────────────────────────────────────────────
+def login_screen():
+    st.title("🤝 Referral Tool")
+    st.subheader("Login")
+    name = st.selectbox("Your Name", ["Select..."] + list(AGENT_PASSWORDS.keys()))
+    password = st.text_input("Password", type="password")
+    if st.button("Login", use_container_width=True):
+        if name == "Select...":
+            st.error("Please select your name.")
+        elif AGENT_PASSWORDS.get(name) == password:
+            st.session_state.agent = name
+            st.rerun()
+        else:
+            st.error("Incorrect password. Try again.")
+
+if "agent" not in st.session_state:
+    login_screen()
+    st.stop()
+
+agent = st.session_state.agent
+is_manager = agent == "Manager"
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Referral Tool", page_icon="🤝", layout="centered")
 st.title("🤝 Referral Management")
-st.caption("Track referrals, send the right message at the right time.")
+st.caption(f"Logged in as **{agent}**")
+if st.button("Logout"):
+    del st.session_state.agent
+    st.rerun()
 
-agent = st.selectbox("Who are you?", AGENTS)
-if agent == "Select agent...":
-    st.stop()
-
-is_manager = agent == "Manager"
 ws = get_sheet()
+tab1, tab2, tab3 = st.tabs(["Log Referral", "Message Templates", "Referral Board"])
 
-tab1, tab2, tab3 = st.tabs(["Log Referral Request", "Message Templates", "Referral Board"])
-
-# ── TAB 1: LOG ────────────────────────────────────────────────────────────────
 with tab1:
     st.subheader("Log a Referral Request or Received Referral")
     with st.form("ref_form", clear_on_submit=True):
@@ -77,13 +99,12 @@ with tab1:
             client_phone = st.text_input("Client Phone")
         with col2:
             st.markdown("**Referral (New Prospect)**")
-            ref_name     = st.text_input("Referral Name (if received)")
-            ref_phone    = st.text_input("Referral Phone")
-
-        stage      = st.selectbox("Stage", REFERRAL_STAGES)
-        follow_up  = st.date_input("Follow-Up Date", value=date.today() + timedelta(days=7))
-        notes      = st.text_area("Notes")
-        submitted  = st.form_submit_button("💾 Save Referral", use_container_width=True)
+            ref_name  = st.text_input("Referral Name (if received)")
+            ref_phone = st.text_input("Referral Phone")
+        stage     = st.selectbox("Stage", REFERRAL_STAGES)
+        follow_up = st.date_input("Follow-Up Date", value=date.today() + timedelta(days=7))
+        notes     = st.text_area("Notes")
+        submitted = st.form_submit_button("💾 Save Referral", use_container_width=True)
 
     if submitted:
         if not client_name:
@@ -95,54 +116,45 @@ with tab1:
                            str(follow_up), "No", notes, ""])
             st.success("✅ Referral logged!")
             if stage == "Requested":
-                st.info("📲 Send the 'Initial Ask' message template from the Templates tab.")
+                st.info("📲 Send the 'Initial Ask' message from the Templates tab.")
             elif stage == "Received":
                 st.info("📲 Send the 'Thank You – Referral Received' message.")
 
-# ── TAB 2: TEMPLATES ──────────────────────────────────────────────────────────
 with tab2:
     st.subheader("Message Templates")
-    st.caption("Fill in the fields below, then copy the message to send.")
-
     template_choice = st.selectbox("Select Template", list(TEMPLATES.keys()))
     col1, col2 = st.columns(2)
     with col1:
-        client_name_t  = st.text_input("Client Name", key="t_client")
+        client_name_t   = st.text_input("Client Name", key="t_client")
     with col2:
         referral_name_t = st.text_input("Referral Name (if applicable)", key="t_ref")
-
     msg = TEMPLATES[template_choice]\
         .replace("{client_name}", client_name_t or "[Client Name]")\
         .replace("{agent}", agent)\
         .replace("{referral_name}", referral_name_t or "[Referral Name]")
-
     st.markdown("---")
     st.subheader("📋 Your Message")
     st.text_area("Copy this message:", value=msg, height=220, key="msg_out")
     st.info("💡 Copy the message above and send via text, GHL, or your preferred platform.")
 
-# ── TAB 3: BOARD ──────────────────────────────────────────────────────────────
 with tab3:
     title = "All Referrals" if is_manager else f"Your Referrals — {agent}"
     st.subheader(title)
     referrals = load_referrals(ws, agent, is_manager)
-
     if not referrals:
         st.info("No referrals logged yet.")
     else:
         total     = len(referrals)
-        received  = sum(1 for r in referrals if r.get("Referral Name") and r.get("Referral Name") != "")
+        received  = sum(1 for r in referrals if r.get("Referral Name"))
         converted = sum(1 for r in referrals if r.get("Stage") == "Policy Issued")
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Requests Made", total)
         c2.metric("Referrals Received", received)
         c3.metric("Policies Issued", converted)
         c4.metric("Conversion Rate", f"{round(converted/received*100)}%" if received else "0%")
-
         if is_manager:
-            agents_list = [a for a in AGENTS if a != "Select agent..." and a != "Manager"]
+            agents_list = [a for a in AGENT_PASSWORDS if a != "Manager"]
             sel = st.selectbox("Filter by agent", ["All"] + agents_list)
             if sel != "All":
                 referrals = [r for r in referrals if r.get("Agent") == sel]
-
         st.dataframe(referrals, use_container_width=True)
