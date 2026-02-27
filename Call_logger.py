@@ -41,7 +41,7 @@ def save_call(ws, row):
 
 # ── LOGIN ─────────────────────────────────────────────────────────────────────
 def login_screen():
-    st.title("📞 Call Logger")
+    st.title("Turn It Up Agency Call Logger")
     st.subheader("Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -61,8 +61,8 @@ if "agent" not in st.session_state:
 agent = st.session_state.agent
 
 # ── UI ────────────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="Call Logger", page_icon="📞", layout="centered")
-st.title("📞 Call Logger")
+st.set_page_config(page_title="Turn It Up Agency Call Logger", layout="centered")
+st.title("Turn It Up Agency Call Logger")
 st.caption(f"Logged in as **{agent}**")
 if st.button("Logout", key="logout"):
     del st.session_state.agent
