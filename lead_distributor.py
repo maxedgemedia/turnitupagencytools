@@ -7,7 +7,13 @@ import json
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Leads"
-AGENTS     = ["Select agent...", "Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← edit
+
+AGENT_PASSWORDS = {
+    "Agent 1":  "pass1",
+    "Agent 2":  "pass2",
+    "Agent 3":  "pass3",
+    "Manager":  "manager123",
+}
 
 LEAD_SOURCES  = ["Inbound Web Form", "Purchased List – Mortgage Protection",
                  "Purchased List – Final Expense", "Referral", "Social Media", "Hot Transfer"]
@@ -15,7 +21,6 @@ PRODUCTS      = ["Mortgage Protection", "Final Expense", "IUL", "Term Life", "Wh
 LANGUAGES     = ["English", "Spanish", "Other"]
 PIPELINE_STAGES = ["New Lead", "Contacted", "Appointment Set", "App Submitted", "Issued", "Closed Lost"]
 
-# Agent skill matrix — edit to match real agents
 AGENT_PROFILES = {
     "Agent 1": {"languages": ["English"], "products": ["Mortgage Protection", "Term Life"],   "states": ["TX", "FL"], "senior": False},
     "Agent 2": {"languages": ["English", "Spanish"], "products": ["Final Expense", "IUL"],    "states": ["TX", "CA"], "senior": True},
@@ -23,26 +28,18 @@ AGENT_PROFILES = {
 }
 
 def assign_agent(source, product, language, state):
-    """Simple rule-based distribution."""
-    # Priority: referrals/hot transfers go to senior agents
     if source in ["Referral", "Hot Transfer"]:
         seniors = [a for a, p in AGENT_PROFILES.items() if p["senior"]]
         if seniors:
             return seniors[0], "Priority lead → Senior agent"
-
-    # Language match
     if language != "English":
         bilingual = [a for a, p in AGENT_PROFILES.items() if language in p["languages"]]
         if bilingual:
             return bilingual[0], f"{language}-speaking lead → Bilingual agent"
-
-    # Product + state match
     matches = [a for a, p in AGENT_PROFILES.items()
                if product in p["products"] and state in p["states"]]
     if matches:
         return matches[0], "Product & state match"
-
-    # Fallback round-robin
     all_agents = list(AGENT_PROFILES.keys())
     return all_agents[0], "Round-robin (no specific match)"
 
@@ -59,28 +56,46 @@ def get_sheet():
         ws = sh.add_worksheet(TAB_NAME, rows=1000, cols=14)
         ws.append_row(["Timestamp", "Lead Name", "Phone", "Email", "State",
                        "Language", "Lead Source", "Product Interest", "Pipeline Stage",
-                       "Assigned Agent", "Assignment Reason", "Notes",
-                       "Logged By", "First Contact Time"])
+                       "Assigned Agent", "Assignment Reason", "Notes", "Logged By", "First Contact Time"])
     return ws
 
 def load_leads(ws, agent, is_manager):
     rows = ws.get_all_records()
     return rows if is_manager else [r for r in rows if r.get("Assigned Agent") == agent]
 
+# ── LOGIN ─────────────────────────────────────────────────────────────────────
+def login_screen():
+    st.title("📋 Lead Distributor")
+    st.subheader("Login")
+    name = st.selectbox("Your Name", ["Select..."] + list(AGENT_PASSWORDS.keys()))
+    password = st.text_input("Password", type="password")
+    if st.button("Login", use_container_width=True):
+        if name == "Select...":
+            st.error("Please select your name.")
+        elif AGENT_PASSWORDS.get(name) == password:
+            st.session_state.agent = name
+            st.rerun()
+        else:
+            st.error("Incorrect password. Try again.")
+
+if "agent" not in st.session_state:
+    login_screen()
+    st.stop()
+
+agent = st.session_state.agent
+is_manager = agent == "Manager"
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Lead Distributor", page_icon="📋", layout="centered")
 st.title("📋 Lead Distributor")
+st.caption(f"Logged in as **{agent}**")
+if st.button("Logout"):
+    del st.session_state.agent
+    st.rerun()
 
-agent = st.selectbox("Who are you?", AGENTS)
-if agent == "Select agent...":
-    st.info("Select your name to continue.")
-    st.stop()
-
-is_manager = agent == "Manager"
 ws = get_sheet()
 tab1, tab2 = st.tabs(["Submit New Lead", "Lead Board"])
 
-# ── TAB 1: NEW LEAD ───────────────────────────────────────────────────────────
 with tab1:
     st.subheader("Intake New Lead")
     with st.form("lead_form", clear_on_submit=True):
@@ -110,7 +125,6 @@ with tab1:
             st.info(f"**Assigned to:** {assigned}  \n**Reason:** {reason}")
             st.warning("📲 Reminder: Send initial contact message within 5 minutes.")
 
-# ── TAB 2: LEAD BOARD ─────────────────────────────────────────────────────────
 with tab2:
     title = "All Leads" if is_manager else f"Your Leads — {agent}"
     st.subheader(title)
@@ -118,18 +132,15 @@ with tab2:
     if not leads:
         st.info("No leads yet.")
     else:
-        total = len(leads)
-        appts = sum(1 for l in leads if l.get("Pipeline Stage") == "Appointment Set")
+        total  = len(leads)
+        appts  = sum(1 for l in leads if l.get("Pipeline Stage") == "Appointment Set")
         issued = sum(1 for l in leads if l.get("Pipeline Stage") == "Issued")
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Leads", total)
         c2.metric("Appointments", appts)
         c3.metric("Issued Policies", issued)
-
         if is_manager:
-            agents_list = [a for a in AGENT_PROFILES.keys()]
-            sel = st.selectbox("Filter by agent", ["All"] + agents_list)
+            sel = st.selectbox("Filter by agent", ["All"] + list(AGENT_PROFILES.keys()))
             if sel != "All":
                 leads = [l for l in leads if l.get("Assigned Agent") == sel]
-
         st.dataframe(leads, use_container_width=True)
