@@ -8,21 +8,18 @@ import json
 SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Calls"
 
-# ← Edit: add real agent names and passwords
 AGENTS = ["Demo Agent", "Manager"]
 SHARED_PASSWORD = "TurnItUp2026"
-
-
 
 CALL_TYPES = ["Inbound Lead", "Outbound Follow-Up", "Client Service", "Recruit Call"]
 OUTCOMES   = ["Appointment Set", "Callback Requested", "No Answer", "Not Interested", "Policy Sold"]
 
 # ── GOOGLE SHEETS AUTH ────────────────────────────────────────────────────────
 def get_sheet():
- scopes = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
- ]
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
     creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
@@ -92,14 +89,14 @@ with tab1:
         next_action, due_date = "", ""
         if outcome in ["Appointment Set", "Callback Requested"]:
             st.markdown("---")
-            st.markdown("**📅 Follow-Up Details**")
+            st.markdown("**Follow-Up Details**")
             c1, c2 = st.columns(2)
             with c1:
                 next_action = st.text_input("Next Action")
             with c2:
                 due_date = st.date_input("Due Date", value=date.today())
 
-        submitted = st.form_submit_button("✅ Save Call Log", use_container_width=True)
+        submitted = st.form_submit_button("Save Call Log", use_container_width=True)
 
     if submitted:
         if not caller or not call_type or not outcome:
@@ -108,11 +105,11 @@ with tab1:
             ts = f"{call_date} {call_time.strftime('%H:%M')}"
             save_call(ws, [ts, agent, caller, phone, call_type,
                            outcome, notes, next_action, str(due_date) if due_date else ""])
-            st.success(f"✅ Call logged for {caller}!")
+            st.success(f"Call logged for {caller}!")
             if outcome == "Appointment Set":
-                st.info("📅 Reminder: Create a calendar event for this appointment.")
+                st.info("Reminder: Create a calendar event for this appointment.")
             if outcome == "Callback Requested":
-                st.info(f"🔔 Follow-up due: {due_date}")
+                st.info(f"Follow-up due: {due_date}")
 
 # ── TAB 2: HISTORY ────────────────────────────────────────────────────────────
 with tab2:
