@@ -7,66 +7,26 @@ import json
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 SHEET_NAME = "InsuranceAgencyTools"
 TAB_NAME   = "Quotes"
-AGENTS     = ["Select agent...", "Agent 1", "Agent 2", "Agent 3", "Manager"]  # ← edit
+
+AGENT_PASSWORDS = {
+    "Agent 1":  "pass1",
+    "Agent 2":  "pass2",
+    "Agent 3":  "pass3",
+    "Manager":  "manager123",
+}
 
 HEALTH_CLASSES = ["Preferred Plus", "Preferred", "Standard Plus", "Standard", "Table B", "Table D"]
 PRODUCTS       = ["Term – 10yr", "Term – 20yr", "Term – 30yr", "Whole Life", "Final Expense", "IUL"]
 
-# ── RATE TABLE (placeholder — replace with real carrier rate sheets) ───────────
-# Format: rates[product][health_class][gender] = base monthly per $1k coverage
-# Client should supply actual rate sheets — these are illustrative only.
 RATE_TABLE = {
-    "Term – 10yr": {
-        "Preferred Plus": {"M": 0.05, "F": 0.04},
-        "Preferred":      {"M": 0.07, "F": 0.06},
-        "Standard Plus":  {"M": 0.09, "F": 0.08},
-        "Standard":       {"M": 0.12, "F": 0.10},
-        "Table B":        {"M": 0.16, "F": 0.14},
-        "Table D":        {"M": 0.22, "F": 0.19},
-    },
-    "Term – 20yr": {
-        "Preferred Plus": {"M": 0.08, "F": 0.07},
-        "Preferred":      {"M": 0.11, "F": 0.09},
-        "Standard Plus":  {"M": 0.14, "F": 0.12},
-        "Standard":       {"M": 0.18, "F": 0.16},
-        "Table B":        {"M": 0.24, "F": 0.21},
-        "Table D":        {"M": 0.32, "F": 0.28},
-    },
-    "Term – 30yr": {
-        "Preferred Plus": {"M": 0.11, "F": 0.09},
-        "Preferred":      {"M": 0.15, "F": 0.13},
-        "Standard Plus":  {"M": 0.19, "F": 0.17},
-        "Standard":       {"M": 0.25, "F": 0.22},
-        "Table B":        {"M": 0.33, "F": 0.29},
-        "Table D":        {"M": 0.44, "F": 0.39},
-    },
-    "Whole Life": {
-        "Preferred Plus": {"M": 0.45, "F": 0.38},
-        "Preferred":      {"M": 0.55, "F": 0.47},
-        "Standard Plus":  {"M": 0.65, "F": 0.55},
-        "Standard":       {"M": 0.75, "F": 0.64},
-        "Table B":        {"M": 0.90, "F": 0.77},
-        "Table D":        {"M": 1.10, "F": 0.94},
-    },
-    "Final Expense": {
-        "Preferred Plus": {"M": 2.20, "F": 1.80},
-        "Preferred":      {"M": 2.60, "F": 2.10},
-        "Standard Plus":  {"M": 3.00, "F": 2.50},
-        "Standard":       {"M": 3.50, "F": 2.90},
-        "Table B":        {"M": 4.20, "F": 3.50},
-        "Table D":        {"M": 5.50, "F": 4.60},
-    },
-    "IUL": {
-        "Preferred Plus": {"M": 0.35, "F": 0.29},
-        "Preferred":      {"M": 0.45, "F": 0.37},
-        "Standard Plus":  {"M": 0.55, "F": 0.46},
-        "Standard":       {"M": 0.65, "F": 0.54},
-        "Table B":        {"M": 0.80, "F": 0.67},
-        "Table D":        {"M": 1.00, "F": 0.84},
-    },
+    "Term – 10yr": {"Preferred Plus": {"M": 0.05, "F": 0.04}, "Preferred": {"M": 0.07, "F": 0.06}, "Standard Plus": {"M": 0.09, "F": 0.08}, "Standard": {"M": 0.12, "F": 0.10}, "Table B": {"M": 0.16, "F": 0.14}, "Table D": {"M": 0.22, "F": 0.19}},
+    "Term – 20yr": {"Preferred Plus": {"M": 0.08, "F": 0.07}, "Preferred": {"M": 0.11, "F": 0.09}, "Standard Plus": {"M": 0.14, "F": 0.12}, "Standard": {"M": 0.18, "F": 0.16}, "Table B": {"M": 0.24, "F": 0.21}, "Table D": {"M": 0.32, "F": 0.28}},
+    "Term – 30yr": {"Preferred Plus": {"M": 0.11, "F": 0.09}, "Preferred": {"M": 0.15, "F": 0.13}, "Standard Plus": {"M": 0.19, "F": 0.17}, "Standard": {"M": 0.25, "F": 0.22}, "Table B": {"M": 0.33, "F": 0.29}, "Table D": {"M": 0.44, "F": 0.39}},
+    "Whole Life":  {"Preferred Plus": {"M": 0.45, "F": 0.38}, "Preferred": {"M": 0.55, "F": 0.47}, "Standard Plus": {"M": 0.65, "F": 0.55}, "Standard": {"M": 0.75, "F": 0.64}, "Table B": {"M": 0.90, "F": 0.77}, "Table D": {"M": 1.10, "F": 0.94}},
+    "Final Expense": {"Preferred Plus": {"M": 2.20, "F": 1.80}, "Preferred": {"M": 2.60, "F": 2.10}, "Standard Plus": {"M": 3.00, "F": 2.50}, "Standard": {"M": 3.50, "F": 2.90}, "Table B": {"M": 4.20, "F": 3.50}, "Table D": {"M": 5.50, "F": 4.60}},
+    "IUL":         {"Preferred Plus": {"M": 0.35, "F": 0.29}, "Preferred": {"M": 0.45, "F": 0.37}, "Standard Plus": {"M": 0.55, "F": 0.46}, "Standard": {"M": 0.65, "F": 0.54}, "Table B": {"M": 0.80, "F": 0.67}, "Table D": {"M": 1.00, "F": 0.84}},
 }
 
-# Carrier multipliers (simulates different carrier pricing)
 CARRIERS = {
     "Carrier A": {"multiplier": 1.00, "features": "Living benefits, conversion option, accelerated UW"},
     "Carrier B": {"multiplier": 1.08, "features": "Strong brand, dividend history, fast processing"},
@@ -81,7 +41,6 @@ def calc_premium(product, health_class, gender, coverage_k, age, tobacco):
     tobacco_factor = 1.6 if tobacco else 1.0
     return round(base * coverage_k * age_factor * tobacco_factor, 2)
 
-# ── GOOGLE SHEETS ─────────────────────────────────────────────────────────────
 def get_sheet():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_info(
@@ -97,14 +56,34 @@ def get_sheet():
                        "Best Carrier", "Best Monthly Premium"])
     return ws
 
+# ── LOGIN ─────────────────────────────────────────────────────────────────────
+def login_screen():
+    st.title("💰 Quoting Tool")
+    st.subheader("Login")
+    name = st.selectbox("Your Name", ["Select..."] + list(AGENT_PASSWORDS.keys()))
+    password = st.text_input("Password", type="password")
+    if st.button("Login", use_container_width=True):
+        if name == "Select...":
+            st.error("Please select your name.")
+        elif AGENT_PASSWORDS.get(name) == password:
+            st.session_state.agent = name
+            st.rerun()
+        else:
+            st.error("Incorrect password. Try again.")
+
+if "agent" not in st.session_state:
+    login_screen()
+    st.stop()
+
+agent = st.session_state.agent
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Quoting Tool", page_icon="💰", layout="centered")
 st.title("💰 Quoting Tool")
-st.caption("Generate side-by-side premium comparisons for client presentations.")
-
-agent = st.selectbox("Who are you?", AGENTS)
-if agent == "Select agent...":
-    st.stop()
+st.caption(f"Logged in as **{agent}**")
+if st.button("Logout"):
+    del st.session_state.agent
+    st.rerun()
 
 ws = get_sheet()
 tab1, tab2 = st.tabs(["Generate Quote", "Quote History"])
@@ -123,7 +102,6 @@ with tab1:
             coverage     = st.number_input("Coverage Amount ($)", 10000, 2000000, 250000, step=10000)
             health_class = st.selectbox("Health Classification", HEALTH_CLASSES)
             state        = st.text_input("State", max_chars=2).upper()
-
         notes = st.text_area("Talking Points / Notes", height=80)
         run   = st.form_submit_button("📊 Generate Comparison", use_container_width=True)
 
@@ -131,23 +109,16 @@ with tab1:
         coverage_k = coverage / 1000
         results = []
         for carrier_name, carrier_data in CARRIERS.items():
-            base = calc_premium(product, health_class, gender, coverage_k, age, tobacco)
+            base    = calc_premium(product, health_class, gender, coverage_k, age, tobacco)
             monthly = round(base * carrier_data["multiplier"], 2)
             annual  = round(monthly * 12, 2)
-            results.append({
-                "Carrier":          carrier_name,
-                "Monthly Premium":  f"${monthly:,.2f}",
-                "Annual Premium":   f"${annual:,.2f}",
-                "Key Features":     carrier_data["features"],
-                "_monthly_raw":     monthly,
-            })
-
+            results.append({"Carrier": carrier_name, "Monthly Premium": f"${monthly:,.2f}",
+                            "Annual Premium": f"${annual:,.2f}", "Key Features": carrier_data["features"],
+                            "_monthly_raw": monthly})
         results.sort(key=lambda x: x["_monthly_raw"])
-
         st.markdown("---")
         st.subheader("📋 Carrier Comparison")
         st.caption(f"Client: {client_name} | {age}yr {gender} | {product} | ${coverage:,} | {health_class} | {'Tobacco' if tobacco else 'Non-tobacco'}")
-
         for i, r in enumerate(results):
             label = "⭐ Best Value" if i == 0 else ("💡 Alt Option" if i == 1 else "")
             with st.expander(f"{r['Carrier']}  —  {r['Monthly Premium']}/mo  {label}", expanded=(i < 2)):
@@ -155,8 +126,6 @@ with tab1:
                 col1.metric("Monthly", r["Monthly Premium"])
                 col2.metric("Annual", r["Annual Premium"])
                 st.write(f"**Features:** {r['Key Features']}")
-
-        # Talking points
         best = results[0]
         st.markdown("---")
         st.subheader("🗣️ Presentation Talking Points")
@@ -167,8 +136,6 @@ with tab1:
 - Budget alternative: {results[1]['Carrier']} at {results[1]['Monthly Premium']}/month
 - {notes if notes else 'Add custom talking points above.'}
         """)
-
-        # Save
         ws.append_row([datetime.now().strftime("%Y-%m-%d %H:%M"), agent, client_name,
                        age, gender, product, f"${coverage:,}", health_class,
                        tobacco, best["Carrier"], best["Monthly Premium"]])
