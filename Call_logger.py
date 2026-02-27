@@ -19,7 +19,10 @@ OUTCOMES   = ["Appointment Set", "Callback Requested", "No Answer", "Not Interes
 
 # ── GOOGLE SHEETS AUTH ────────────────────────────────────────────────────────
 def get_sheet():
-    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+ scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+ ]
     creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
